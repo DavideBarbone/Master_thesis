@@ -1,0 +1,12 @@
+\chapter*{Sintesi} 
+\label{ch:Sintesi}
+
+ Sin dalla loro introduzione, i veicoli di tipo segway hanno attirato un notevole interesse da parte di produttori e utenti, grazie alla loro semplice struttura meccanica, manovrabilità unica e capacità di operare in diversi scenari, con una vasta gamma di possibili applicazioni. Nonostante la semplicità apparente del modello, studiare i controllori da applicare a questi veicoli non è semplice data la loro particolare dinamica non lineare e intrinseca instabilità.
+
+Nel corso degli anni, sono state sviluppate diverse strategie di controllo per questi veicoli, spaziando dalle metodologie più classiche all'applicazione di controllori intelligenti,mostrando buoni risultati in termini di performance. Tuttavia, si è prestata meno attenzione allo studio della prevenzione dello slittamento tra ruote e terreno e all'utilizzo di questi veicoli come piattaforme capaci di navigazione autonoma.
+
+Lo scopo di questa tesi è affrontare queste due sfide, applicate a un veicolo elettrico autonomo a due ruote (smart E-Cargo), mediante un controllore Task Space Inverse Dynamics (TSID). Questo controllore, all'interno di un problema di ottimizzazione, è in grado di gestire una serie di vincoli cinematici e dinamici per garantire un moto di puro rotolamento, assicurando allo stesso tempo l'auto-bilanciamento e il tracking di una traiettoria desiderata nello spazio. Poiché il TSID è principalmente progettato per robot umanoidi modellati come sistemi floating base, lo stesso approccio è stato adottato per l'E-Cargo.
+
+La strategia di controllo proposta è stata implementata utilizzando Matlab e Simulink a partire da un modello del veicolo nel formato Unified Robot Description Format (URDF). I risultati delle simulazioni mostrano l'efficacia dell'approccio TSID nel mantenere la stabilità e nel raggiungere un tracking preciso. Inoltre, è stata condotta un'analisi di robustezza per valutare le prestazioni sotto diverse condizioni di carico e in presenza di un'incertezza nella misura dell'attrito.
+\\
+\textbf{Parole chiave:} Segway, controllo, TSID , attrito, auto-bilanciamento, tracciamento % Parole chiave

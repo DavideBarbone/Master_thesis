@@ -1,0 +1,337 @@
+\chapter{Task Space Inverse Dynamics}
+\label{ch:chapter_three}%
+% The \label{...}% enables to remove the small indentation that is generated, always leave the % symbol.
+
+
+Task Space Inverse Dynamics (TSID) is a well known control framework in the legged robots community, popularized by Oussama Khatib \cite{Khatib1987} in 1987 and which then became a very active research topic.
+
+The main reference for this chapter is \cite{Del-Prete2013} by Andrea Del Prete, in which can be found the detailed derivation of the control framework, and a comparison with the other most popular controllers.
+In this chapter is provided the general description of TSID, focusing on the features that will then be exploited for our purpose.
+
+As the name suggests it is important to provide a definition for the "task" and to carefully develop the robot dynamical model.
+For the introduction part the robot state is called $\mathbf{x}$, while the input is called $\mathbf{u}$. 
+
+\section{Actuation models}
+\label{sec:Actuation models}
+
+Before entering into the logic part of the controller, as in all model-based controller, it is important to choose a proper robot model, that depends not only on the robot itself, but also on the task that we would like the robot to perform, and a good starting point can be the adoption of a proper model for the actuators.
+The model that we use for actuators is the \textbf{torque model}, meaning that they are assumed to be direct torque sources,but it is not the only existing one; for example as long as large contact forces are not involved, for electric motors we can assume them as direct acceleration sources.
+Usually for robot that are in contact with the terrain, this is not a good assumption, since the contact forces are in the same order of magnitude of the robot's weight.
+For our purposes, the best model of the actuators is to assume that they are force/torque sources.
+In this case the robot state, as already written in \cref{subsec: Floating-Base generalized coordinates}, is made by its configuration $\mathbf{q}$, and its generalized velocities $\bm{\nu}$, and the control inputs are the motor torques $\bm{\tau}$.
+With the assumption of the actuators as ideal torque sources, the dynamic of the robot is more complicated than a double integrator, and has the form derived in \eqref{eq: Equation of Motion}.
+That form of the EoM is the classical one used in case of fully actuated systems, while for underactuated ones that equation can be decomposed into unactuated and actuated parts:
+
+    \begin{equation}
+         \begin{cases}
+          M_a(\mathbf{q})\dot{\bm{\nu}} + h_a(\mathbf{q}, \bm{\nu}) = \bm{\tau} + \sum_{k \in \mathcal{I}_C} J^{T}_{a,k}\mathbf{f}_{k} 
+          \\
+          M_u(\mathbf{q})\dot{\bm{\nu}} + h_u(\mathbf{q}, \bm{\nu}) = \sum_{k \in \mathcal{I}_C} J^{T}_{u,k}\mathbf{f}_{k}
+         \end{cases} 
+         \label{eq: Equation of Motion_underactuated}
+    \end{equation}
+
+    where 
+    
+   \begin{equation*}
+       M = \begin{bmatrix}
+    M_u \\
+    M_a
+\end{bmatrix}, h = \begin{bmatrix}
+    h_u \\
+    h_a
+\end{bmatrix}, J = \begin{bmatrix}
+    J_u & J_a
+\end{bmatrix}.
+   \end{equation*}
+
+The decoupling in \eqref{eq: Equation of Motion_underactuated} is important to show that the unactuated dynamics has only the contact forces on the right hand, and this already suggests that in order to completely control the system, we need to pay special attention to these forces.
+
+\section{Task models}
+\label{sec:Task models}
+
+Controlling a robot means wanting it to satisfy a specific task, and after modeling the robot and its actuators, it is also necessary to develop a model for the tasks to be completed.
+
+The \textbf{Task-Function Approach} is used, which shares some basic ideas with \textbf{Optimal Control}.
+The task to be performed is described as a function that we would like to minimize.
+Without loss of generality TSID assumes this function as an error between the value of a certain output function, and a reference value that we want our output to follow.
+Usually the reference function is time dependent, while the output depends on both the state and the control (also on the time).
+The main difference with respect to Optimal Control Theory is that in OCT the function to be minimized is a function of the state-input trajectory (usually called \textit{cost functional}), while TSID just works on the instantaneous error between the output and the reference even if both are time dependent.
+
+\begin{table}[h]
+    \centering
+    \caption{TSID vs Optimal Control.}
+    \label{tab:list_of_symbols}
+    \renewcommand{\arraystretch}{1.5} % Increase the vertical spacing between rows
+    \begin{tabular}{c c}
+    \toprule
+    \textbf{Approach} & \textbf{Cost Function} \\
+    \midrule
+    TSID & $e(x,u,t) = y(x,u) -y^{n}(t) $\\
+    \hline
+    Optimal Control & $ J = \int_{t_0}^{t_f} s(x(t), u(t), t) \, dt $\\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+There can be different types of task functions, but for the development of the E-Cargo controller the main interest is related to linear functions of the the control input \textbf{u}, and \textbf{non linear functions of robot configuration} such that:
+
+    \begin{equation}
+         e(\mathbf{q},t) = y(\mathbf{q}) - y^{n}(t).
+         \label{eq: Task function}
+    \end{equation}
+
+Something that requires more attention, is that what we can instantaneously control and select the control input \textbf{u}, but not directly the state, since only the state derivative is affected by the control input.
+In particular in our purpose we can instantaneously change the robot accelerations since the actuators have been modeled as torque sources, meaning that we can't directly satisfy the task function in \eqref{eq: Task function}.
+
+To overcome this issue a dynamics of the task function is imposed, affecting the derivatives of this function $e(\mathbf{q},t)$ in a way that $\lim_{t \to \infty} e(\mathbf{q},t) = 0$, since that one is the minimum that we would like to achieve to have the output exactly following the reference.
+
+We want to end up in an affine function of the robot generalized acceleration $\dot{\bm{\nu}}$ (the fact that it is affine is important for computational aspects).
+
+Starting from \eqref{eq: Task function}, we can impose a second order linear error dynamic (we could also impose a non linear dynamic to the task function, but a linear dynamic is enough in most of the cases).:
+
+\begin{equation*}
+    \ddot{e} = -K_d\dot{e} -K_pe.
+\end{equation*}
+
+This obtained linear dynamical system is stable if both $K_p$ and $K_d$ are positive.
+
+Expanding the term $e(\mathbf{q},t)$, the previous equation becomes
+
+\begin{equation}
+    \ddot{y} - \ddot{y}^{n}  = -K_d(\dot{y}-\dot{y}^{n}) -K_p(y - y^{n}).
+    \label{eq: Task dynamics}
+\end{equation}
+
+Then some of the terms involved in Equation \eqref{eq: Task dynamics} are grouped together in a single one that we call \textbf{desired acceleration}
+
+\begin{equation}
+    \ddot{y}^{*} = \ddot{y}^{n} -K_d(\dot{y}-\dot{y}^{n}) -K_p(y - y^{n}).
+    \label{eq: Desired Acceleration}
+\end{equation}
+
+The core of this approach is to try to express the second output derivative $\ddot{y}$ as a function of the robot generalized acceleration $\dot{\bm{\nu}}$, and so the first output derivative $\dot{y}$ as a function of the robot generalized velocity $\bm{\nu}$.
+Then it will be seen that is important to obtain functions that are \textbf{affine} in the sense that \cite{boyd2004convex}, given $f: \mathbb{R}^n \to \mathbb{R}^m$, $f$ can be expressed as:
+
+\begin{equation*}
+    f(\mathbf{x}) = A\mathbf{x} + \mathbf{b},
+\end{equation*}
+
+where: $\mathbf{x} \in \mathbb{R}^n$ is the input vector, $\mathbf{A} \in \mathbb{R}^{m \times n}$ is a matrix representing the linear transformation, $\mathbf{b} \in \mathbb{R}^m$ is a vector representing the translation.
+
+According to this definition, Equation \eqref{eq: Task dynamics} has to be written as:
+
+\begin{equation*}
+        J_{T}\dot{\bm{\nu}} + \dot{J_{T}}\bm{\nu} - \ddot{y}^{n} = -K_d(\dot{y}-\dot{y}^{n}) -K_p(y - y^{n}) ,
+\end{equation*}
+
+and so:
+
+\begin{equation}
+        J_{T}\dot{\bm{\nu}} = \ddot{y}^{n} - \dot{J_{T}}\bm{\nu} - K_d(\dot{y}-\dot{y}^{n}) - K_p(y - y^{n}).
+        \label{eq: Task equation with Jacobians}
+\end{equation}
+
+Equation \eqref{eq: Task equation with Jacobians} shows that the affine function is obtained through the Jacobian that has been called $J_{T}$ meaning for \textbf{Task Jacobian} and represents the derivatives of the output with respect to the base generalized velocity: $J_{T} = \frac{\partial y}{\partial \bm{\nu}}$.
+
+What we have in the end is an affine function of the robot acceleration and control input, as:
+
+\begin{equation}
+        \mathbf{g}(\mathbf{v}) = \begin{bmatrix}
+            A_{\nu} & A_{u}
+        \end{bmatrix} \begin{Bmatrix}
+            \bm{\dot{\nu}} \\
+            \mathbf{u}
+        \end{Bmatrix}.
+        \label{eq: Affine preliminar function}
+\end{equation}
+
+In next equations the matrix $\begin{bmatrix}
+            A_{\nu} & A_{u}
+        \end{bmatrix}$ id called 'A' , and  $\begin{Bmatrix}
+            \bm{\dot{\nu}} \\
+            \mathbf{u}
+        \end{Bmatrix}$ is called $\mathbf{v}$
+
+\section{Optimization Problem Formulation}
+\label{sec:Optimization Problem Formulation}
+
+The task definition, along with the robot control model, has been carefully designed to be the foundation of an \textbf{optimization-based control} method.
+As previously mentioned, the idea of formulating control problems like optimization problems, follows from OCT.
+The key elements are:
+
+\begin{itemize}
+    \item \textbf{robot state}: $\mathbf{x} = (\mathbf{q},\bm{\nu})$
+    \item \textbf{control input}: $\mathbf{u} = \bm{\tau}$
+    \item \textbf{robot dynamic model}: $ M(\mathbf{q})\dot{\bm{\nu}} + C(\mathbf{q},\bm{\nu})\bm{\nu} + \mathbf{g}(\mathbf{q}) = S\bm{\tau} + \sum_{k \in \mathcal{I}_C} J^{T}_{k}\mathbf{f}_{k}$
+    \item \textbf{task function to minimize}: $\|\mathbf{g}(\mathbf{v})\|_2 = \| A\mathbf{v} - \mathbf{a}\|_2$
+\end{itemize}
+
+Notice that the task function in Equation \eqref{eq: Affine preliminar function} is a vector valued function, but from an optimization point of view, the concept of minimizing a vector is meaningless; for this reason what is actually minimized is $\|\mathbf{g}(\mathbf{v})\|_2$ which is a quadratic function.
+
+The final step in setting up the optimization-based control is to introduce and appropriately model the necessary constraints.
+
+\subsection{Constraints model}
+\label{subsec:Constraints model}
+
+The role of the contact forces has been already mentioned at the beginning of this chapter, but requires a more accurate analysis:
+we have seen in Equation \eqref{eq: Equation of Motion_underactuated} how they drive the unactuated robot dynamics, in all cases in which the robot is in contact with the external environment.
+There are two main ways to model contacts between mechanical systems and the environment:
+
+\begin{itemize}
+    \item \textbf{Soft Contact Models} that do not constrain the motion;
+    \item \textbf{Rigid Contact Models} that constrain the motion.
+\end{itemize}
+
+We use the Rigid Contact Model because it provides a more reasonable approximation for our purposes. This model imposes constraints on motion: once the robot is in contact with the ground, it cannot move downwards or penetrate the ground.
+
+TSID models constraints in the same way of tasks; we can start from a non linear function of the robot configuration
+
+\begin{equation}
+    c(\mathbf{q}) = 0
+    \label{eq: contact point general constraint}
+\end{equation}
+
+enforcing that the points of the robot that are in rigid contact with the environment don't move; the strong assumption behind this formulation is that if the robot is in contact, it can't break the contact (because the contact point could move in some directions, but here all its possible motions are constrained).
+The main outcome of this assumption is that we have to know if the robot is in contact or not with the ground, in order to activate/deactivate the constraint. 
+What stated is reasonable for legged robot, and will be adapted to the case of the TWIP in next chapters.
+
+Starting from Equation \eqref{eq: contact point general constraint}, we will incorporate this as a constraint in our QP by following the same procedure used for the task definition, knowing that we can't directly impose a function of the robot configuration, but deriving it twice, we can impose an affine function of the robot generalized acceleration (constraining the contact points accelerations to be null):
+
+\begin{equation}
+    {J_{R}}\dot{\bm{\nu}} + \dot{J}_{R}\bm{\nu} = 0
+    \label{eq: Contact dynamics with Jacobians}
+\end{equation}
+
+where ${J_{R}}$ represents the derivatives of the output chosen to describe the contact with respect to the base generalized velocity ${J_{R}} = \frac{\partial c}{\partial \bm{\nu}}$. 
+
+By imposing Equation \eqref{eq: Contact dynamics with Jacobians} we are ensuring also Equation \eqref{eq: contact point general constraint} given the implicit initial conditions of "being in contact".
+
+\subsection{TSID Problem Statement}
+\label{subsec:TSID Problem Statement}
+
+At this stage, we can outline the basic framework of our optimization problem aimed at minimizing the task functions by determining optimal control inputs, considering both the EoM and the contact model as equality constraints:
+
+\begin{center}
+$\underset{\bm{\dot{\nu},f_{c},\bm{\tau}}}{\text{argmin}} \| A\mathbf{v} - \mathbf{a}\|^{2}$
+
+\text{subject to}
+
+\end{center}
+
+\begin{equation}
+\begin{bmatrix} 
+M & -J_{c}^{T} & -S^{T}  \\
+J_{R} & 0 & 0  \\
+\end{bmatrix} 
+\begin{Bmatrix} 
+\bm{\dot{\nu}} \\
+\mathbf{f_{c}} \\
+\bm{\tau}  \\
+\end{Bmatrix} 
+= 
+\begin{Bmatrix} 
+-\mathbf{h} \\
+-\dot{J}_{R} \\
+\end{Bmatrix}
+\label{eq: first QP-setup}
+\end{equation}
+
+In \eqref{eq: first QP-setup}, $\mathbf{v}$ is the vector of the optimization variables containing the robot generalized acceleration $\bm{\dot{\nu}}$, the torques vector $\bm{\tau}$, and the contact forces $\mathbf{f_{c}}$.
+What can be demonstrated, and has been done in \cite{Mistry-et-al, Park_Khatib_2008} is that in the case of rigid contacts, contact forces are a direct function of the joint torques, so by selecting the joint torques the solver can indirectly select the contact forces: this explains why we are able to add contact forces to the vector of optimization variables.
+The cost function is a convex quadratic function of the optimization variables and, since the constraints are affine, this problem is a \textbf{Convex Quadratic Program (QP)}.
+
+To be more precise about the definitions, the cost function is the square of an affine function of the optimization variables, and so a special kind of convex quadratic function, so the problem is a \textbf{Least-Squares Problem (LSP)}.
+
+Throughout this work we will just refer to it as a generic QP.
+
+So far this control problem can be classified as an \textbf{Equality-Constrained Least-Squares Problem (ECLSP)}.
+It is well known that uncostrained LSP, can be solved through \textbf{pseudo-inverse}, meaning that the solution of: 
+\begin{equation*}
+    \underset{\mathbf{v}}{\text{argmin}} \| A\mathbf{v} - \mathbf{a}\|^{2}
+\end{equation*}
+is directly given by:
+\begin{equation*}
+    \mathbf{v}^{*} = A^\dagger \mathbf{a}
+\end{equation*}
+
+When only equality constraints are added, the pseudo-inverse solution still holds, and so the solution of a problem like:
+
+\begin{center}
+\begin{equation*}
+    \underset{\mathbf{v}}{\text{argmin}} \| A\mathbf{v} - \mathbf{a}\|^{2}
+\end{equation*}
+\text{subject to;}
+\begin{equation*}
+    B\mathbf{v} = \mathbf{b}
+\end{equation*}
+
+\end{center}
+
+is directly given by:
+\begin{equation*}
+    \mathbf{v}^{*} = B^{\dagger}\mathbf{b} + N_B (AN_B)^{\dagger}(\mathbf{a} - AB^{\dagger}\mathbf{b})
+\end{equation*}
+
+where $N_B = I - B^{\dagger}B$ is the null-space projector of $B$.
+
+Everything changes when \textbf{inequality constraints} are added, because in these cases the optimization problem can no more be solved through pseudo-inverses, and this is why the QP formulation has been introduced.
+
+The most common inequality constraints that are used in robotics are the following affine functions of optimization variables $\mathbf{v}$:
+
+\begin{itemize}
+    \item Joint torque bounds: $\tau_{\min} \leq \tau \leq \tau_{\max}$.
+    \item Linear approximation of force friction cones: $B\mathbf{f_c} \leq 0$.
+    \item any other equality-like constraint expressed with a slack variable: $d\mathbf{v} + \xi = 0$.
+\end{itemize}
+
+We will show how to deal with them for our specific purpose.
+
+\subsection{Multi-Task Optimization}
+\label{subsec:Multi-Task Optimization}
+
+So far we have described the basic idea of the TSID controller, when the task model has been formulated for just one task; in most of the cases this is not enough since we want the robot to perform multiple tasks, for example follow a trajectory, while keeping a balancing of its center of mass.
+Some of these tasks can have more priority with respect to the others (usually the balancing task is more important then the tracking one), and this problem can be tackled in different ways.
+Here we are going to describe the simpler idea, which is the one used in our developments, and is called \textbf{Weighted Multi-Objective Optimization}.
+
+Assuming that the robot has to perform $N$ tasks, each defined by a proper task function
+
+$$
+\|\mathbf{g_{i}}(\mathbf{v})\|^{2} = \| A_{i}\mathbf{v} - \mathbf{a_{i}}\|^{2} \quad \text{for} \quad i = 1, \ldots, N
+$$
+
+this approach prescribes to sum all these functions, each multiplied by a proper user-defined \textbf{weight} $w_{i}$; in this way the control problem can be rewritten as:
+
+\begin{center}
+$\underset{\bm{\dot{\nu},f_{c},\bm{\tau}}}{\text{argmin}} \| \sum_{i=1}^{N} w_i \mathbf{g}_{i}(\mathbf{v}) \|^{2}$
+
+\text{subject to}
+
+\end{center}
+
+\begin{equation}
+\begin{bmatrix} 
+M & -J_{c}^{T} & -S^{T}  \\
+J_{R} & 0 & 0  \\
+\end{bmatrix} 
+\begin{Bmatrix} 
+\bm{\dot{\nu}} \\
+\mathbf{f_{c}} \\
+\bm{\tau}  \\
+\end{Bmatrix} 
+= 
+\begin{Bmatrix} 
+-\mathbf{h} \\
+-\dot{J}_{R} \\
+\end{Bmatrix}
+\label{eq: First Multi-task QP-setup}
+\end{equation}
+
+The higher the weight $w_{i}$, the more important the corresponding task $\mathbf{g}_{i}(\mathbf{v})$ is. 
+
+Given that the sum of least-squares function is still a least-squares function, the problem remains a LSP.
+A possible weak point of this approach is that finding weights can be difficult, and if the tasks are many, each one more important than the other, it can happen to end up with too large/small weights leading to numerical issues.
+
+To solve the mentioned issues, a different a more complicated 
+approach can be used, called \textbf{Hierarchical Multi-Objective Optimization}, where the key idea is to order the task functions, according to \textbf{priorities} \cite{Romano2015WholebodyFC}\cite{Escande2014HierarchicalQP}.
+

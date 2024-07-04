@@ -1,0 +1,21 @@
+\chapter{Conclusions and future developments}
+\label{ch:conclusions}%
+
+This thesis presents a new control strategy for a smart E-Cargo, belonging to a class of vehicles that can be identified under the name of \textit{two wheeled inverted pendulum}. The vehicle has been modeled as a floating base system and the control framework implemented is named Task Space Inverse Dynamics (TSID) and belongs to the big class of feedback linearization controllers.
+With respect to the state of the art our controller solves a constrained optimization problem, where one of the constraints aims at preventing the slip between the wheels and the terrain. 
+Since the actuators are modeled as torque sources, the controller's output consists of the two torques to be applied to each wheel.
+We decided to implement a control in position on a point rigidly connected to the base, positioned 5 meters ahead of it, to desingularize the unicycle's in-plane configuration.
+The self-balancing of the robot is then imposed inside the constraints, while the tracking of a reference trajectory is guaranteed as the minimization of the error dynamics.
+A simple trajectory planner, constituted by a PI controller has been adopted to give the reference pitch angle, given the error in the in-plane velocity.
+All the user-defined parameters have been defined through a trial and error approach, until we found an optimal set of controller gains and QP weights that works well in all the tested scenarios.
+A first simulation has been performed considering the model as perfect without uncertainties and the E-Cargo loaded at its maximum load capacity of 60 kg: the plots show how both the swing-up and the trajectory are achieved with a very good performance and without violating anyone of the constraints.
+A final robustness analysis has been carried out to test the controller performances with uncertainties in the model parameters and friction coefficient, considering three different loading conditions, maintaining the input URDF file constant.
+The results achieved demonstrates how the controller is able to guarantee the initial swing up and the trajectory tracking even in the most undesired scenario in which the E-Cargo is loaded at its maximum capacity and has to start from the maximum allowed pitch angle.
+Even if the results achieved until now are satisfying, there is still something that can be improved in order to achieve better performances and to make our assumptions more reasonable.
+The strongest hypothesis that we made regards the knowledge of the friction coefficient between the wheels and the terrain, which is usually a wrong assumption in most of the cases.
+Our preliminary solution intended to choose low values for this coefficient, in order to guarantee a proper functioning in most of the real case applications; a better approach can be the development of an estimator that based on the difference between the expected no-slip maximum velocity, and the actual one, decreases the friction coefficient in real time: if the estimate is fast enough we expect the controller to function properly.
+Furthermore, a better trajectory planner can be implemented: instead of the linear PI controller, a Model Predictive Controller (MPC) can be used to calculate the optimal pitch trajectory according to the nominal trajectory that are imposed for the tracking task.
+One final comment regard the possible implementation of an estimator for some model parameters like the CoM position or the total payload mass because, although we have demonstrated the robustness of the controller against the variation of these parameters, if we are able to know them with more precision, the performances can naturally improve.
+
+
+

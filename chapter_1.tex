@@ -1,0 +1,542 @@
+\chapter{Rigid Multibody Dynamics}
+\label{ch:chapter_one}%
+% The \label{...}% enables to remove the small indentation that is generated, always leave the % symbol.
+
+In this chapter, we introduce some useful information regarding rigid multibody dynamics.
+
+\section{Notation overview}
+\label{sec:Notation_overview}
+
+Throughout this thesis, according to the work of Traversaro \cite{Traversaro2017thesis} we adhere to the following notation and conventions.
+
+\begin{itemize}
+    \item The set of real numbers is denoted by $\mathbb{R}$. Let $ \mathbf{u}$ and $ \mathbf{v}$ be two $n$-dimensional column vectors of real numbers, i.e. $ \mathbf{u},  \mathbf{v} \in \mathbb{R}^n$, then their inner product is denoted as $ \mathbf{u}^T  \mathbf{v}$, with "$T$" the transpose operator.
+    \item The identity matrix of dimension $n$ is denoted $ {I}_n \in \mathbb{R}^{n\times n}$; the zero column vector of dimension $n$ is denoted $ \mathbf{0}_n \in \mathbb{R}^n$; the zero matrix of dimension $n\times m$ is denoted $ {0}_{n\times m} \in \mathbb{R}^{n\times m}$.
+    \item The set $SO(3)$ is the set of $\mathbb{R}^{3\times 3}$ orthogonal matrices with determinant equal to one, that is,
+    \begin{equation}
+    SO(3) := \{  {R} \in \mathbb{R}^{3\times 3} \,|\,  {R}^T  {R} =  {I}_3, \det( {R}) = 1 \}.
+    \end{equation}
+    \item The set $\mathfrak{so}(3)$, read \textit{little} $\mathfrak{so}(3)$, is the set of $3\times 3$ skew-symmetric matrices,
+    \begin{equation}
+    \mathfrak{so}(3) := \{  {S} \in \mathbb{R}^{3\times 3} \,|\,  {S}^T = - {S} \}.
+    \end{equation}
+    \item The set $SE(3)$ is defined as
+    \begin{equation}
+    SE(3) := \left\{ \begin{pmatrix}  {R} &  \mathbf{p} \\  \mathbf{0}_3^T & 1 \end{pmatrix} \in \mathbb{R}^{4\times 4} \,|\,  {R} \in SO(3),  \mathbf{p} \in \mathbb{R}^3 \right\}.
+    \end{equation}
+    \item The set $\mathfrak{se}(3)$ is defined as
+    \begin{equation}
+    \mathfrak{se}(3) := \left\{ \begin{pmatrix} \Omega & \mathbf{v} \\  \mathbf{0}_{3}^T & 0 \end{pmatrix} \in \mathbb{R}^{4\times 4} \,|\, \Omega \in \mathfrak{so}(3), \mathbf{v} \in \mathbb{R}^3 \right\}.
+    \end{equation}
+    \item Given the vector ${\bm{\omega}} = (x; y; z) \in \mathbb{R}^3$, we define $\bm{\omega}^\wedge$ (read $\bm{\omega}$ \textit{hat}) as the $3\times 3$ \textit{skew-symmetric matrix}
+    \begin{equation}
+     {\bm{\omega}}^\wedge = \begin{Bmatrix} x\\ y \\ z \end{Bmatrix}^\wedge := \begin{bmatrix} 0 & -z & y \\ z & 0 & -x \\ -y & x & 0 \end{bmatrix} \in so(3).
+    \end{equation}
+    Given the \textit{skew-symmetric matrix} $W = \bm{\omega}^\wedge$, we define $ {W}^\vee \in \mathbb{R}^{3}$ (read $W$ \textit{vee} ) as
+    \begin{equation}
+     {W}^\vee = \begin{bmatrix} 0 & -z & y \\ z & 0 & -x \\ -y & x & 0 \end{bmatrix}^\vee:= \begin{Bmatrix} x \\ y \\ z \end{Bmatrix} \in \mathbb{R}^3.
+    \end{equation}
+    Clearly, the vee operator is the inverse of the hat operator.
+    \item Given a vector $\mathbf{v} = (\bm{v}; \bm{\omega}) \in \mathbb{R}^6$, $\bm{v}$ and $\bm{\omega} \in \mathbb{R}^3$, we define
+    \begin{equation}
+    \mathbf{v}^\wedge = \begin{Bmatrix} \bm{v} \\ \bm{\omega} \end{Bmatrix}^\wedge := \begin{bmatrix} \bm{\omega}^\wedge & \bm{v} \\  0_{1 \times 3} & 0 \end{bmatrix} \in se(3).
+    \end{equation}
+    Similarly to what is done for vectors in $\mathbb{R}^3$ above, we define the \textit{vee} operator as the inverse of the hat operator such that
+    \begin{equation}
+    \begin{bmatrix} \bm{\omega}^\wedge & \bm{v} \\  \mathbf{0}_{3}^{T} & 0 \end{bmatrix}^\vee := \begin{Bmatrix} \bm{v} \\ \bm{\omega} \end{Bmatrix} =  \mathbf{v} \in \mathbb{R}^3
+    \end{equation}
+\end{itemize}
+
+    \section{Coordinate frames and transformations}
+    \label{sec:Coordinate frames and transformations}
+
+    We opt to employ a representation method that utilizes homogeneous matrices to describe the relative configuration (translation and rotation) of two coordinate frames in three-dimensional space. Homogeneous matrices possess the advantage of being globally continuous and are easy to perform calculations with, utilizing basic matrix multiplication.
+   
+    Given two frames $A$ and $B$, the coordinate transformation from $B$ to $A$ will be denoted as:
+    \begin{equation}
+    {}^{A} {R}_B \in SO(3).
+    \end{equation}
+    This coordinate transformation ${}^{A} {R}_B$ is independent of the positions of the origins of the two frames and only depends on their relative orientation. \\
+    
+    Given two frames $A$ and $B$, the position and orientation of the frame $B$ with respect to $A$ will be denoted by the $4 \times 4$ homogeneous matrix
+    \begin{equation}
+    {}^{A} {H}_B := \begin{bmatrix}
+    {}^{A} {R}_B & {{}^{A} \mathbf{o}_B} \\
+     {0}_{1 \times 3} & 1 \\
+    \end{bmatrix} \in \mathbb{R}^{4 \times 4}.
+    \label{eq:Homogeneous transformation}
+    \end{equation}
+
+    We can use the matrix defined in Equation \eqref{eq:Homogeneous transformation} to describe the coordinate transformation between two frames given a point $ {p}$:
+    starting from the classical coordinate transformation equation:
+    \begin{equation}
+    {}^{A} \mathbf{p} = {}^{A} {R}_B {}^{B} \mathbf{p} + {{}^{A} \mathbf{o}_B}.
+    \label{eq:coordinate transformation}
+    \end{equation}
+
+    in homogeneous coordinates, denoted ${}^{A}\bar{ {p}} := ({}^{A} {p};1) \in \mathbb{R}^{4}$, and likewise for ${}^{B}\bar{ {p}}$  it becomes:
+    \begin{equation}
+    {}^{A}\bar{ \mathbf{p}} = {}^{A} {H}_B {}^{B}\bar{ \mathbf{p}}.
+    \label{eq:homogeneous coordinate transformation}
+    \end{equation}
+
+    This property of defining a coordinate transformation by a simple matrix multiplication can be used for various purposes. Knowing the relative homogeneous matrix between two coordinate frames means that quantities computed numerically in one of these frames can be transformed to the other by a matrix multiplication. Furthermore, when rigid bodies are moving over time, their motion can be described by a time-varying homogeneous matrix, which can also be used to describe the time-evolution of the position of any point attached to the body by a matrix multiplication.
+
+    \section{Rigid body velocity}
+    \label{sec:Rigid body velocity}
+
+    After defining all the important quantities to identify the position and orientation of frames, the next aspect is to provide definitions of its velocities.
+    Given a point $ {p}$ and a frame $A$, we define:
+    \begin{equation}
+    {}^{A}\dot{ \mathbf{p}} := \frac{d}{dt}({}^{A} \mathbf{p}).
+    \end{equation}
+
+    Starting from this definition we write also:
+
+    \begin{equation}
+    {}^{A}\dot{ \mathbf{o}}_B := \frac{d}{dt}({}^{A} \mathbf{o}_B).
+    \end{equation}
+
+    \begin{equation}
+    {}^{A}\dot{ {R}}_B := \frac{d}{dt}({}^{A} {R}_B).
+    \end{equation}
+
+    Now, since we want to use a time varying homogeneous matrix $ {H}(t)$ to describe the position and orientation of a rigid body, it is straightforward to use 
+    \begin{equation}
+    {}^{A}\dot{ {H}}_B := \frac{d}{dt}({}^{A} {H}_B) = \begin{bmatrix}
+    {}^{A}\dot{ {R}}_B & {}^{A}\dot{ \mathbf{o}}_B \\
+     \mathbf{0}_{3}^{T} & 0 \\
+    \end{bmatrix} \quad \text{with} \quad  {R}(t) {R}^{T}(t) =  {R}^{T}(t) {R}(t) =   {I}   \end{equation}
+    to describe its velocity.
+    However, at all times the matrix $ {H}(t)$ is constrained to be a homogeneous matrix, and so also the degrees of freedom of $\dot{ {H}}(t)$ are constrained, depending on the current value of $ {H}(t)$.
+
+    If we compute the time derivative of the constraint on $ {R}$, it results in:
+    \begin{equation}
+    \mathbf{0} = \dot{ {R}}^{T} {R} +  {R}^{T}\dot{ {R}} = ( {R}^{T}\dot{ {R}})^{T} +  {R}^{T}\dot{ {R}}.
+    \label{eq:skewsymmetric R}
+    \end{equation}
+
+    Equation \eqref{eq:skewsymmetric R} shows that the constraints on $\dot{ {H}}$ can be translated into the constraint that $ {R}^{T}\dot{ {R}}$ must be a skew-symmetric matrix, and the bottom row of $\dot{ {H}}$ must be all zeros; this leads  to the notion of  a twist to represent the velocity of a rigid body.
+
+    \subsection{Twists}
+    \label{subsec: Twists}
+    A \textit{twist} is an element of $\mathfrak{se}(3)$, given as the result of the multiplication of ${}^{A}\dot{ {H}}_B$ by the inverse of ${}^{A} {H}_B$ on the left or on the right.
+
+    Multiplying on the left, one obtains
+
+    \begin{equation}
+    {}^{A} {H}^{-1}_B{}^{A}\dot{ {H}}_B = \begin{bmatrix}
+    {}^{A} {R}^{T}_B & -{}^{A} {R}^{T}_B{}^{A} \mathbf{o}_B \\
+     {0}_{1 \times 3} & 1 \\
+    \end{bmatrix} \begin{bmatrix}
+    {}^{A}\dot{ {R}}_B & {}^{A}\dot{ \mathbf{o}}_B \\
+     {0}_{1 \times 3} & 0 \\
+    \end{bmatrix} = \begin{bmatrix}
+    {}^{A} {R}^{T}_B{}^{A}\dot{ {R}}_B & {}^{A} {R}^{T}_B{}^{A}\dot{ \mathbf{o}}_B \\
+     {0}_{1 \times 3} & 0 \\
+    \end{bmatrix}.
+    \label{eq: twist derivation}
+    \end{equation}
+    
+    At this point we can define the following quantities: ${}^{B}\bm{v}_{A,B}, {}^{B}\bm{\omega}_{A,B} \in \mathbb{R}^3 \quad \text{so that}$
+
+    \begin{equation}
+    {}^{B}\bm{v}_{A,B} := {}^{A} {R}^{T}_B{}^{A}\dot{ \mathbf{o}}_B.
+    \end{equation}
+
+    \begin{equation}
+    {}^{B}\bm{\omega}^{\wedge}_{A,B} := {}^{A} {R}^{T}_B{}^{A}\dot{ {R}}_B.
+    \end{equation}
+
+    The \textit{left trivialized} velocity of frame $B$ with respect to frame $A$ is then defined as 
+    \begin{equation}
+    {}^{B} \mathbf{v}_{A,B} := \begin{Bmatrix} {}^{B}\bm{v}_{A,B} \\ {}^{B}\bm{\omega}_{A,B} \end{Bmatrix} \in \mathbb{R}^6.
+    \label{eq: Left trivialized veocity}
+    \end{equation}
+
+    and then by construction:
+
+    \begin{equation}
+    {}^{B} \mathbf{v}^{\wedge}_{A,B} = {}^{A} {H}^{-1}_B {}^{A}\dot{ {H}}_B.
+    \label{eq: twist definition}
+    \end{equation}
+
+    Similarly to what is done in Equation \eqref{eq: twist derivation}, multiplying ${}^{A}\dot{ {H}}_B$ by the inverse of ${}^{A} {H}_B$ on the right we obtain
+
+    \begin{equation}
+    {}^{A}\dot{ {H}}_B{}^{A} {H}^{-1}_B = \begin{bmatrix}
+    {}^{A}\dot{ {R}}_B & {}^{A}\dot{ \mathbf{o}}_B \\
+     {0}_{1 \times 3} & 0 \\
+    \end{bmatrix} \begin{bmatrix}
+    {}^{A} {R}^{T}_B & -{}^{A} {R}^{T}_B{}^{A} \mathbf{o}_B \\
+     {0}_{1 \times 3} & 1 \\
+    \end{bmatrix}  = \begin{bmatrix}
+    {}^{A}\dot{ {R}}_B{}^{A} {R}^{T}_B & {}^{A}\dot{ \mathbf{o}}_B -  {}^{A}\dot{ {R}}_B{}^{A} {R}^{T}_B{}^{A} \mathbf{o}_B \\
+     {0}_{1 \times 3} & 0 \\
+    \end{bmatrix}
+    \end{equation}
+    
+    At this point we can define the following quantities: ${}^{A}\bm{v}_{A,B}, {}^{A}\bm{\omega}_{A,B} \in \mathbb{R}^3 \quad \text{so that}$
+
+
+    \begin{equation}
+    {}^{A}\bm{v}_{A,B} := {}^{A}\dot{ \mathbf{o}}_B -  {}^{A}\dot{ {R}}_B{}^{A} {R}^{T}_B{}^{A} \mathbf{o}_B.
+    \end{equation}
+
+    \begin{equation}
+    {}^{A}\bm{\omega}^{\wedge}_{A,B} := {}^{A}\dot{ {R}}_B{}^{A} {R}^{T}_B.
+    \end{equation}
+
+    The \textit{right trivialized} velocity of frame $B$ with respect to frame $A$ is then defined as 
+    
+    \begin{equation}
+    {}^{A} \mathbf{v}_{A,B} := \begin{Bmatrix} {}^{A}\bm{v}_{A,B} \\ {}^{A}\bm{\omega}_{A,B} \end{Bmatrix} \in \mathbb{R}^6
+    \label{eq: Right trivialized veocity}
+    \end{equation}
+
+    and then by construction:
+
+    \begin{equation}
+    {}^{A} \mathbf{v}^{\wedge}_{A,B} = {}^{A}\dot{ {H}}_B{}^{A} {H}^{-1}_B.
+    \end{equation}
+
+    \textit{Left trivialized} velocities and \textit{right trivialized} velocities are related via a linear transformation ${}^{A}X_B$ defined as:
+
+    \begin{equation}
+    {}^{A} {X}_B := \begin{bmatrix}
+    {}^{A} {R}_B & {}^{A} \mathbf{o}^{\wedge}_B{}^{A} {R}_B \\
+     {0}_{3 \times 3} & {}^{A} {R}_B\\
+    \end{bmatrix} \in \mathbb{R}^{6 \times 6}
+    \end{equation} 
+
+    and the relation is the following
+
+    \begin{equation}
+    {}^{A} \mathbf{v}_{A,B} := {}^{A} {X}_B {}^{B} \mathbf{v}_{A,B}.
+    \end{equation} 
+
+    The inverse transformation is simply given by ${}^{B} {X}_A$
+    We have defined \textit{left trivialized} and \textit{right trivialized} velocities, but they are special cases of a general idea of expressing relative velocity between two frames, in any arbitrary frame.
+
+    For this purpose we define
+
+    \begin{equation}
+    {}^{C} \mathbf{v}_{A,B} := \begin{Bmatrix} {}^{C}\bm{v}_{A,B} \\ {}^{C}\bm{\omega}_{A,B} \end{Bmatrix} \in \mathbb{R}^6.
+    \end{equation}
+
+    which can be linearly related to both \textit{left trivialized} and \textit{right trivialized} velocities as
+
+    \begin{equation}
+    {}^{C} \mathbf{v}_{A,B} := {}^{C} {X}_A {}^{A} \mathbf{v}_{A,B} = {}^{C} {X}_B {}^{B} \mathbf{v}_{A,B}.
+    \end{equation}
+
+    The whole description provided in this section is necessary to understand the following concept:
+    none of the previously defined $twists$ is sufficient to give us information about what we can call the \textit{natural velocities} of a frame, that are respectively ${}^{A} {\dot{o}}_B$ and ${}^{A}\bm{\omega}_{A,B}$ \cite{Traversaro-Saccon}, that in many cases are needed for example to apply feedback control strategies.
+
+    At this purpose we define the \textit{mixed velocity} of frame B with respect to
+    frame A (we call it mixed as it has both the flavor of a left trivialized velocity due
+    to the linear velocity part and of a right trivialized velocity due to the angular
+    velocity part) as:
+
+    \begin{equation}
+    {}^{B[A]} \mathbf{v}_{A,B} = {}^{B[A]} {X}_B {}^{B} \mathbf{v}_{A,B} = \begin{bmatrix} 
+    {}^{A} {R}_B & 0 \\
+    0 & {}^{A} {R}_B \\
+    \end{bmatrix} \begin{bmatrix} 
+    {}^{A} {R}_B {}^{A}\dot{ \mathbf{o}}_B \\
+    {}^{A}\bm{\omega}_{A,B} \\
+    \end{bmatrix} = \begin{Bmatrix} 
+    {}^{A}\dot{ \mathbf{o}}_B \\
+    {}^{A}\bm{\omega}_{A,B} \\
+    \end{Bmatrix}. 
+    \end{equation}
+
+    \section{Frame acceleration}
+    \label{sec:Frame acceleration}
+    
+    In the robotics literature, frame accelerations are defined in several ways, and here are provided the most commonly adopted interpretations. With reference to \cite{Traversaro-Saccon} we start from the most trivial one that we call \textit{apparent acceleration} of a frame $B$ with respect to a frame $A$ expressed in a frame C: it is simply the time derivative of the corresponding velocity ${}^{C} \mathbf{v}_{A,B}$ 
+
+    \begin{equation}
+    {}^{C}\dot{ \mathbf{v}}_{A,B} := \frac{d}{dt} ({}^{C} \mathbf{v}_{A,B}).
+    \label{eq: Apparent acceleration}
+    \end{equation}
+
+    By recalling the definition for the left trivialized velocity in Equation \eqref{eq: Left trivialized veocity} we can write:
+
+    \begin{equation}
+    {}^{C}\dot{ \mathbf{v}}_{A,B} := \frac{d}{dt} ({}^{C} {X}_{B}{}^{B} \mathbf{v}_{A,B}) = {}^{C} {X}_{B} {}^{B} {\dot{\mathbf{v}}}_{A,B} + {}^{C} {\dot{X}}_{B}{}^{B} \mathbf{v}_{A,B}.
+    \label{eq: Acceleration transformation}
+    \end{equation}
+
+    Equation \eqref{eq: Acceleration transformation} shows that in general ${}^{C}\dot{ \mathbf{v}}_{A,B} \neq {}^{C} {X}_{B} {}^{B} {\dot{\mathbf{v}}}_{A,B}$ because this equation is true only if frame $C = A$.
+    
+    The same property holds for right trivialized velocities with the only difference that in this case $C = B$.
+
+    Starting from these considerations it is possible to define the (intrinsic) \textit{acceleration} of a frame $B$ with respect to a frame $A$ expressed in a frame $C$ as:
+
+    \begin{equation}
+    {}^{C} \mathbf{a}_{A,B} := {}^{C} {X}_{A} {}^{A} {\dot{\mathbf{v}}}_{A,B} = {}^{C} {X}_{B}{}^{B} {\dot{\mathbf{v}}}_{A,B}.
+    \label{eq: Intrinsic acceleration}
+    \end{equation}
+ 
+    In our analysis, we use the following (mixed) apparent acceleration, which is commonly employed in robotics and is defined as
+
+    \begin{equation}
+    {}^{B[A]}\dot{ \mathbf{v}}_{A,B} = \begin{Bmatrix}
+    {}^{B[A]}\dot{\bm{v}}_{A,B} \\
+    {}^{B[A]}\dot{\bm{\omega}}_{A,B}
+    \end{Bmatrix} = \begin{Bmatrix}
+    {}^{A}  {\ddot{\mathbf{o}}}_{B} \\
+    {}^{A}\dot{\bm{\omega}}_{A,B}.
+    \end{Bmatrix}
+    \label{eq: Mixed apparent acceleration}
+    \end{equation}
+
+    The reason is that the linear acceleration corresponds to the Cartesian acceleration of the origin of $B$ with respect to frame $A$
+
+    \section{Force-Torque covectors}
+    \label{sec:Force-Torque covectors}
+    
+    The force acting on a rigid body is defined as a stacking of the linear component $\bm{f} \in \mathbb{R}^{3}$ and the angular component $ \bm{\tau} \in \mathbb{R}^{3}$ of the wrench acting on the body. In particular, we can define $ \mathbf{f} \in \mathbb{R}^6$ with respect to a frame $B$ as:
+
+    \begin{equation}
+    {}_{B} \mathbf{f} = 
+    \begin{Bmatrix}
+    {}_{B}\bm{f} \\
+    {}_{B}\bm{\mu}
+    \end{Bmatrix}.
+    \label{eq: Wrench definition}
+    \end{equation}
+
+    A change of reference frame can be expressed as:
+
+    \begin{equation}
+    {}_{A} \mathbf{f} = {}^{A} {X}_{B} {}_{B} \mathbf{f},
+    \end{equation}
+
+    in which
+
+    \begin{equation}
+    {}_{A} {X}^{B} = {}^{B} {X}_{A}^{T}
+    \label{eq: Forces transformation matrix}
+    \end{equation}
+    
+    is the 6D forces transformation matrix defined as:
+
+    \begin{equation}
+    \begin{bmatrix}
+    {}^{A} {R}_{B} &  {0}_{3\times3} \\
+    {}^{A} \mathbf{o}^{\wedge}_{B} {}^{A} {R}_{B} & {}^{A} {R}_{B}
+    \end{bmatrix}.
+    \end{equation}
+
+    It is important to realize that Equation \eqref{eq: Forces transformation matrix} ensures the following power identity holds:
+
+    \begin{equation}
+    \langle {}_{B} \mathbf{f}, {}^{B} \mathbf{v}_{A,B} \rangle = \langle {}_{A} \mathbf{f}, {}^{A} \mathbf{v}_{A,B} \rangle,
+    \end{equation}
+    
+    where $ \mathbf{f}$ can be interpreted as a $6D$ force applied to a rigid body to which the moving frame $B$ is rigidly attached, and $A$ is the absolute inertial frame.
+
+    \section{Multibody Systems Modelling}
+    \label{sec:Multibody Systems Modelling}
+
+    In this section, we provide a brief overview of the derivation of mechanical systems' equations of motion (EoM). We begin by defining a multibody system and describing its characteristics. We then proceed to derive the EoM for floating-base multibody systems using the Lagrangian approach, which is the method utilized in this thesis.
+
+    According to \cite{Flores}, a general multibody system has two main characteristics:
+
+    \begin{enumerate}
+    \item \textbf{Mechanical components} that describe large translational and rotational displacements .
+    \item \textbf{Kinematic joints} that impose some constraints or restrictions on the relative motion of the bodies.
+    \end{enumerate}
+    
+    In the end it can be considered as a collection of rigid and/or flexible bodies interconnected by kinematic joints and possibly some force elements.
+    We start providing some definiton for both links and joints:
+    
+    \subsection{Links and Joints}
+    \label{subsec: Links and Joints}
+
+    We describe the robot as being composed of $n + 1$ rigid bodies, called \textit{links}, connected by $n$ \textit{joints}, each with a single degree of freedom. Instead of using the real models of the links and joints, we will use their ideal approximations, which can be summarized in the following definitions \cite{Duindam-phd-thesis}:
+
+
+    \begin{description}
+        \item[] \textbf{Ideal Link}: it is defined as a finite volume of point masses, all of which have fixed relative distances, so they are not subject to deformation.
+        \item[] \textbf{Ideal Joint}: is defined as a constraint between two rigid links that allows
+        only certain relative velocities and prevents others, independently of the forces and torques applied to the links.        
+    \end{description}
+
+    In general ideal joints can allow from 0 (fixed joint) to 6 (universal joint) \textbf{DoF} and are defined by a "joint \textit{axis}", but without loss of generality we will consider only 1-\textbf{DoF} joints, in particular only \textit{revolute} joints \cite{Traversaro2017thesis}:
+
+    A \textbf{Revolute Joint} with an \textit{axis} $\mathbf{a} \in \mathbb{R}^3, |\mathbf{a}| =1$ that connects two bodies $B$ and $D$, with  ${}^{B}H_{D} (0) = 1_4$ , is responsible for the following joint transform: 
+
+    \begin{equation}
+         {}^{B}H_{D}(\theta) = \begin{bmatrix}
+             {}^{B}R_{D}(\theta) & \mathbf{0}_{3 \times 1} \\
+             0_{1 \times 3} & 1 \\
+         \end{bmatrix} , {}^{B}R_{D}(\theta) = 1_3 + \cos(\theta)\mathbf{a}^{\wedge} + \sin(\theta)(\mathbf{a}^{\wedge})^2
+    \label{eq: Revolute joint transformation}
+    \end{equation}
+
+    \subsection{Floating-Base generalized coordinates}
+    \label{subsec: Floating-Base generalized coordinates}
+
+    Following \cite{Marion-et-al.}, \textbf{generalized coordinates} are described as: \textit{any set of quantities that completely specifies the state of a system}
+
+    Before entering in the details, here can be introduced a general notation that will be employed troughout all the chapters:
+    $A$ will denote an $inertial frame$ and $B$ the $moving-base$ frame representing a frame rigidly attached to one of the bodies composing the multibody system, selected to express the the relative pose of the system with respect to the inertial frame $A$.
+    
+    For moving-base multibody systems, the \textit{configuration} is parametrized as: $ \mathbf{q} = ( {H},  \mathbf{s}) \in SE(3) \times \mathbb{R}^{n_j}$ , with $ {H} = {}^{A} {H}_{B} \in SE(3)$ representing the pose (position and orientation) of the moving-base frame $B$ and $ \mathbf{s} \in \mathbb{R}^{n_J}$ the internal joint displacements ($ {s}$ stands for shape).
+
+    The dimension of $ \mathbf{q}$ is: $\mathbb{R}^{3} \times SO(3) \times \mathbb{R}^{n_j}$, where $SO(3)$ is a non-minimal coordinates representation,.
+    This can be parametrized in several ways (Euler angles, axis-angle, Cardano angles) to obtain a minimal coordinates representation. This parametrization makes the moving-base $B$ a fictitious 6-\textbf{DoF} joint constituted by 3 prismatic joints connecting $B$ with $A$ and three rotational ones.
+    This setup leads to floating-base systems always being \textbf{underactuated} because these additional 6 \textbf{DoF} are non-actuated, leaving the base non-actuated.
+
+    The velocity of a floating-base multibody system has instead a different structure \cite{Traversaro2017thesis}:
+    Following what has been already discussed in \cref{subsec: Twists}, is more convenient to represent the velocity as a column vector instead of as the derivative of the robot configuration, obtaining the so called \textit{generalized} velocity:
+
+    \begin{equation}
+       \bm{\nu}^{B/C} = \begin{Bmatrix}
+           {}^{C} \mathbf{v}_{A,B}\\
+           \dot{\mathbf{s}}
+       \end{Bmatrix} \in \mathbb{R}^{n+6}
+    \label{eq: generalized multibody velocity} 
+    \end{equation}
+
+    As already discussed, for our purpose (and for control purposes in general) we employ the \textit{mixed} velocity ${}^{B[A]} \mathbf{v}_{A,B}$ of the base, ending up with the \textit{mixed} generalized velocity
+
+    \begin{equation}
+       \bm{\nu}^{B/B[A]} = \begin{Bmatrix}
+           {}^{B[A]} \mathbf{v}_{A,B}\\
+           \dot{\mathbf{s}}
+       \end{Bmatrix} \in \mathbb{R}^{n+6}
+    \label{eq: mixed generalized multibody velocity} 
+    \end{equation}
+    
+    The generalized coordinates of a robot consist of its generalized velocity along with its configuration.
+    
+    \subsection{Geometric Jacobians}
+    \label{subsec: Geometric Jacobians}
+
+    The final key concept before introducing the floating-base equations of motion is the definition of the \textbf{Geometric Jacobian}. 
+    Generally, all accessible outputs are base-related. However, we might need to determine the velocity of a specific link within our multibody system, or, in cases where the base is not in direct contact with the external environment, understand how to "transport" a contact wrench acting on a specific link into the base reference frame.
+
+    In these subsection just some definitions will be provided, for more details and proofs see the work of Ferigo \cite{ferigo_phd_thesis_2022}, which starts from the definition of \textit{path}.
+
+    The path $\pi_B(E) = \{B, \ldots, E\}$ between link $B$ and link $E$ is the ordered sequence of links part of the kinematic graph that connects $B$ to $E$: given a generic link $E$ , its pose with respect to the base is given by what is called \textit{relative forward kinematics} between link $B$ and link $E$ and it depends on the sequence of parent-to-child transforms ${}^{\lambda(i)} {H}_i$ of all the adjacent links belonging to the path $\pi_B(E)$:
+
+    \begin{equation}
+        {}^{B}  {H}_{E}( {s}) = {}^{B} {H}_{\lambda(\lambda \ldots (E))} \ldots {}^{\lambda(\lambda(E)} {H}_{\lambda(E)} {}^{\lambda(E)} {H}_{E} = \prod_{L_i \in \pi_B(E)/B} {}^{\lambda(L_i)} {H}_{L_i(s_i)}
+    \label{eq: path definition}
+    \end{equation}
+
+    Each element ${}^{\lambda(L)} {H}_{L}$ is given given by the joint model that defines the transform between two links connected through a joint as discussed in Equation \eqref{eq: Revolute joint transformation}.
+
+    Starting from this definition of path is possible to find a relation between the generalized velocity of the system and the 6D velocity vector of a specific link within the path as:
+
+    \begin{equation}
+        {}^{C} \mathbf{v}_{A,E} = {}^{C}J_{A,E/C}( \mathbf{q}) {}^{C}\bm{\nu}
+    \label{eq: First Jacobian definition}
+    \end{equation}
+
+    In this equation, the term: ${}^{C}J_{A,E/C}( {q})$ is called \textit{left-trivialized floating-base Jacobian} of link E.
+
+    It follows from this trivial velocity composition:
+
+    \begin{equation}
+        {}^{E} \mathbf{v}_{A,E} = {}^{E} \mathbf{v}_{A,B} + {}^{E} \mathbf{v}_{B,E}
+    \label{eq: Jacobian derivation starting point}
+    \end{equation}
+
+    where ${}^{E} \mathbf{v}_{B,E}$ can be expressed as the sum of the velocities between adjacent links in the link path $\pi_B(E)$ between link $B$ and $E$, ending up in: 
+
+    \begin{equation}
+        {}^{E} \mathbf{v}_{A,E} = {}^{E} \mathbf{v}_{A,B} + \sum_{L_i \in \pi_B(E)/B} {}^{E}H_{L_i}{}^{L_i}S_{\lambda(L_i),L_i}(s_i)\dot{s}_i
+    \end{equation}
+
+    In matrix form it becomes:
+
+    \begin{equation}
+        {}^{E} \mathbf{v}_{A,E} = \begin{bmatrix}
+            {}^{E}X_C & {}^{E}S_{B,E( {s})}
+        \end{bmatrix} \begin{bmatrix} 
+            {}^{C} \mathbf{v}_{A,E} \\
+            \dot{\mathbf{s}}
+        \end{bmatrix} = {}^{C}J_{A,E/C}{}^{C}\bm{\nu}
+    \label{eq: Jacobian pre-definition}
+    \end{equation}
+
+    From Equation \eqref{eq: Jacobian pre-definition} we can see that the Jacobian can be divided in two main components, the first one representing the floating-base part and the second one representing the fixed-base (joint) part
+
+    What we will adopt in agreement with all the other quantities previously described is the \textit{doubly mixed} version of this Jacobian, defined as:
+
+    \begin{equation}
+        J_E( \mathbf{q}) = {}^{E[A]}J_{A,E/B[A]}( \mathbf{q})
+    \label{eq:doubly mixed Jacobian definition}
+    \end{equation}
+
+    in a way that the mixed velocity of a link $E$ can be obtained as:
+
+    \begin{equation}
+        {}^{E[A]} \mathbf{v}_{A,E} = {}^{E[A]}J_{A,E/B[A]}( \mathbf{q})\bm{\nu}^{B/B[A]}
+    \end{equation}
+
+    As stated in the prologue of this subsection, the duality between 6D velocities and 6D forces also propagates to the definition of the floating-base Jacobian. 
+    If we consider a contact wrench ${}_{C_i} \mathbf{f}_{i}$, which could, for example, be the combination of forces and moments applied to the frame $C_i = (o_{C_i}, [A])$ associated with contact point $i$ of link $E$, whose pose is defined by the transform ${}^{E}H_{C_i}$, we can use the Jacobian defined in Equation \eqref{eq:doubly mixed Jacobian definition} to project the wrench to the floating-base configuration space as:
+
+    \begin{equation}
+        {}^{C_i} J_{A,L/X}( \mathbf{q})^{T} {}_{C_i} \mathbf{f}_i = ({}^{C_i}X_{L} {}^{L}J_{A,L/X}( \mathbf{q}))^{T} {}_{C_i} \mathbf{f}_i \in \mathbb{R}^{6+n}
+    \label{eq: General contact Jacobian}
+    \end{equation}
+    
+   Equation \eqref{eq: General contact Jacobian} will be explored further in the upcoming chapters when dealing with rolling contacts.
+
+
+
+    \section{Equation of Motion}
+    \label{sec: Equation of Motion}
+
+    According to classical mechanics theory, there are two main approaches that lead to the derivation of the \textbf{EoM} for a given mechanical system:
+    
+    \begin{enumerate}
+    \item \textbf{Newtonian Mechanics}: Derived from the Newton-Euler equations, this method focuses on the direct application of Newton's laws of motion.
+    \item \textbf{Lagrangian Mechanics}: Derived from the system's energy formulation, this method uses the difference between kinetic and potential energies to develop the equations of motion.
+    \end{enumerate}
+    
+    For floating-base multibody systems the \textbf{EoM} are derived trough a Lagrangian approach, with some important differences in order to take into account the underactuated floating-base dynamics.
+    In particular what is commonly used in robotics is a generalization of Euler-Lagrange equations, the Hamel equations \cite{Marsden-et-al.}, which can be seen as a combination of the Euler-Poincare equations for the base part, and the classical Euler-Lagrange equation for the joint.
+    The floating-base multibody Lagrangian in this way becomes just the sum of the Lagrangian of each link.
+
+    \begin{equation*}
+         l( \mathbf{q},\bm{\nu}) = k( \mathbf{q},\bm{\nu}) - U( \mathbf{q}) ,
+    \end{equation*}
+
+    \begin{equation*}
+         k( \mathbf{q},\bm{\nu}) = \frac{1}{2}\sum_{L \in \mathcal{L}} {}^{L}  \mathbf{v}^{T}_{W,L}\mathbb{M}_L{}^{L}  \mathbf{v}_{W,L},
+    \end{equation*}
+
+    \begin{equation*}
+         U( \mathbf{q}) = -\sum_{L \in \mathcal{L}} {}^{L} \begin{bmatrix}
+             {}^{W} \mathbf{g}^{T} & \bm{0}_{1x3}
+         \end{bmatrix} m_L {}^{W} {H}_L \begin{bmatrix}
+             {}^{L}{ \mathbf{c}} \\
+             1 \\
+         \end{bmatrix}
+    \end{equation*}
+
+   The floating-base multibody Lagrangian plugged into the Hamel equations gives the \textbf{EoM} of the floating-base multibody system \cite{Traversaro2017thesis}:
+
+   \begin{equation}
+         \begin{cases}
+          \dot{ \mathbf{q}} = ({}^{W}\dot{ {H}}_{B}, \dot{ \mathbf{s}}) \\
+          M( \mathbf{q})\dot{\bm{\nu}} + C( \mathbf{q},\bm{\nu})\bm{\nu} +  \mathbf{g}( \mathbf{q}) = S\bm{\tau} + \sum_{k \in \mathcal{I}_C} J^{T}_{k} \mathbf{f}_{k}
+         \end{cases} 
+    \label{eq: Equation of Motion}
+    \end{equation}
+
+    In Equation \eqref{eq: Equation of Motion}  $ M( \mathbf{q}) \in \mathbb{R}^{(n+6) \times (n+6)}$ is the mass matrix, $C( \mathbf{q},\bm{\nu})\bm{\nu}$ is the Coriolis matrix $ \mathbf{g}( \mathbf{q})$ is the vector containing the gravitational terms, while $S \in \mathbb{R}^{(n+6) \times n} := \begin{bmatrix}
+        0_{6 \times n_j} & I_{n_j}
+    \end{bmatrix}^{T}$  is the joint selector matrix. 
+    
+    It extracts only the internal torques $\bm{\tau}_j \in \mathbb{R}^n$ from the generalized torque vector $\bm{\tau} \in \mathbb{R}^{n+6}$, while setting to zero the fictitious torques related to the base. 
+    Finally, $ \mathbf{f}_k \in \mathbb{R}^6 = [\bm{f}_k^{T}, \bm{\mu}_k^{T}]^\top$ is the $k$-th of the $n_c$ contact wrenches composed of the 3D force and moment, while $J = [J_1^\top, \ldots, J_{n_c}^\top]$ is the stack of the contact Jacobians. Intuitively, $J$ maps the set of wrenches $\mathbf{f}$ into the generalized torques $\bm{\tau}$.
+    It is also common to put Coriolis and gravitational effects together in a term called \textit{vector of bias forces}: $ {\mathbf{h}(\mathbf{q},\bm{\nu})}$ .

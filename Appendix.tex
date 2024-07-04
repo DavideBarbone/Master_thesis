@@ -1,0 +1,341 @@
+\chapter{Appendix}
+\label{ch:Appendix}%
+% The \label{...}% enables to remove the small indentation that is generated, always leave the % symbol.
+
+In this appendix, we derive several equations that, while pertinent to the understanding and implementation of concepts discussed in the main body of this thesis, are not the central focus of our investigation. These derivations provide additional information and technical details that contribute to a comprehensive understanding of the methodologies and principles employed.
+
+A simplified notation is adopted for the following variables:
+
+\begin{itemize}
+    \item $\bm{\nu}$ indicates the mixed representation of the base generalized velocity $\bm{\nu}^{B[A]/B}$
+    \item $J_{B}$ is the Jacobian of the base ${}^{B[A]} J_{A,B/B[A]}$
+    \item $\mathbf{e_{3}}$ is the unitary vector $\begin{bmatrix}
+        0 & 0 & 1 \\
+    \end{bmatrix}^{T}$
+\end{itemize}
+
+\section{Self-Balancing equation}
+\label{sec:Self-Balancing equation}
+
+Here are provided just some mathematical passages to understand which are the element involved in Equation \eqref{eq: Pitch angular acceleration}.
+
+Starting from Equation \eqref{eq:YRP Jacobian}, given the known elementary rotation matrices $R_{y}(\theta),R_{z}(\phi)$ \cite{Siciliano-et-al}, the final expression for the Jacobian is:
+
+\begin{equation}
+    {}^{A}J_{YRP} = \begin{bmatrix}
+        \cos{\theta}\cos{\phi} & -\sin{\phi} & 0 \\
+        sin{\phi} & cos{\phi} & 0 \\
+        -sin{\theta}\cos{\phi} & 0 & 1 \\
+    \end{bmatrix}
+\end{equation}
+
+where $\theta$ and $\phi$ are obtained (given the rotations sequence in Figure \ref{fig:Yaw-Roll-Pitch decomposition}) from the rotation matrix ${}^{A}R_{B}$ as
+
+\begin{equation}
+\begin{cases}
+    \theta = \arctan_{2}(-{}^{A}R_{B}(3,1),\sqrt{({}^{A}R_{B}(3,2))^2+({}^{A}R_{B}(3,3))^2}) \\
+    \psi = \arctan_{2}({}^{A}R_{B}(2,1),{}^{A}R_{B}(1,1)) 
+    \end{cases}
+\end{equation}
+
+
+This Jacobian is invertible if its determinant is $\neq 0$, and so 
+
+\begin{equation*}
+    \cos{\theta}\cos{\phi}^{2} + \sin{\phi}^{2} \neq 0
+\end{equation*}
+
+Given this insight, if we define a selection matrix $S_{\omega}$
+
+
+\begin{equation*}
+    S_{\omega} = \begin{bmatrix}
+ 0 & 0 & 0 & 1 & 0 & 0 \\
+ 0 & 0 & 0 & 0 & 1 & 0 \\
+ 0 & 0 & 0 & 0 & 0 & 1 \\
+\end{bmatrix}
+\end{equation*}
+
+and another selection matrix $S_{\theta}$
+
+\begin{equation*}
+    S_{\theta} = \begin{bmatrix}
+ 0 & 1 & 0 
+\end{bmatrix}
+\end{equation*}
+
+Considering that we need the right trivialized base angular velocity ${}^{A}\bm{\omega}_{A,B}$
+
+\begin{equation*}
+  {}^{A}\bm{\omega}_{A,B} =  S_{\omega}J_{B}\bm{\nu}  
+\end{equation*}
+
+The final Equation \eqref{eq: Pitch angular acceleration} is obtained 
+
+\begin{equation*}
+    \ddot{\theta} = S_{\theta}{}^{A}J^{-1}_{YRP}S_{\omega}J_{B}\dot{\bm{\nu}} - S_{\theta}{}^{A}\dot{J}^{-1}_{YRP}S_{\omega}J_{B}\bm{\nu}
+\end{equation*}
+
+\section{Tracking equation}
+\label{sec:Tracking equation}
+
+Starting from Equation \eqref{eq:control point velocity}
+
+\begin{equation*}
+    {}^{A} \dot{\bm{\alpha}} = \frac{d}{dt} ({}^{A} \bm{\alpha}) = {}^{A} \dot{\mathbf{P}} + {}^{A} \dot{R}_B^{xy} {}^{B} \bm{\delta}
+\end{equation*}
+
+Let us define a selection matrix $S_{v_{\alpha}}$ as
+
+\begin{equation*}
+ S_{v_{\alpha}} = \begin{bmatrix}
+ 1 & 0 & 0 & 0 & 0 & 0 \\
+ 0 & 1 & 0 & 0 & 0 & 0 \\
+\end{bmatrix}
+\end{equation*}
+
+the terms involved in equation \eqref{eq:control point velocity} are:
+
+\begin{itemize}
+    \item ${}^{A} \dot{\mathbf{P}}$ which includes the components x and y of the base velocity and can be written as: 
+\begin{equation*}
+    {}^{A} \dot{\mathbf{P}} = S_{v_{\alpha}}J_{B}\bm{\nu}
+\end{equation*}
+
+where $J_{B}$ is the Jacobian of the base, and so the product $S_{v_{\alpha}}J_{B}$ gives a matrix like:
+
+\begin{equation*}
+    \begin{bmatrix} 
+        1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+        0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+    \end{bmatrix}
+\end{equation*}
+
+\item ${}^{A} \dot{R}^{xy}_{B} {}^{B} \bm{\delta}$ for which can be written:
+
+\begin{equation*}
+{}^{A} \dot{R}^{xy}_{B} = {}^{A}R^{xy}_{B} {}^{B}\bm{\omega}^{\wedge{}}_{A,B}
+\end{equation*}
+
+
+This term ${}^{B}\bm{\omega}^{\wedge{}}_{A,B}$ is the skewsimmetryc matrix of the vector ${}^{B}\bm{\omega}_{A,B}$ which is the angular velocity of the base given by:
+
+\begin{equation*}
+  {}^{B}\bm{\omega}_{A,B} =  {}^{B}R_{B[A]}S_{\omega}J_{B}\bm{\nu}  
+\end{equation*}
+
+
+\end{itemize}
+
+Regarding the acceleration of the control point point $\ddot{\bm{\alpha}}$ its expression is:
+
+\begin{equation*}
+{}^{A}\ddot{\bm{\alpha}}_{xy} = \frac{d}{dt} [S_{v_{\alpha}}J_{B}\bm{\nu} + S_{v_{\alpha}}{}^{A}R^{xy}_{B} {}^{B}\bm{\omega}^{\wedge{}}_{A,B} {}^{B}\bm{\delta}] = \frac{d}{dt} [S_{v_{\alpha}}J_{B}\nu + S_{v_{\alpha}}{}^{A}R^{xy}_{B}({}^{B}R^{xy}_{B[A]}S_{\omega}J_{B} \bm{\nu})^{\wedge}{}^{B}\bm{\delta}]
+\end{equation*}
+
+
+Now exploiting the linear property of the cross product operator: $\mathbf{v}^{\wedge{}}\mathbf{x} = - \mathbf{x}^{\wedge{}}\mathbf{v}$
+
+\begin{equation*}
+{}^{A}R^{xy}_{B}({}^{B}R^{xy}_{B[A]}S_{\omega}J_{B} \bm{\nu})^{\wedge{}}{}^{B}\bm{\delta} = - {}^{A}R^{xy}_{B}({}^{B}\delta)^{\wedge{}}{}^{B}R^{xy}_{B[A]}S_{\omega}J_{B} \bm{\nu}
+\end{equation*}
+
+So we can obtain the final form of Equation \eqref{eq:control point acceleration affine} (considering that $J_{B}$ and the selection matrices are constant) as:
+
+\begin{equation*}
+\begin{aligned}
+{}^{A} \ddot{\bm{\alpha}}_{xy} = & \; S_{v_{\alpha}}J_{B}\dot{\bm{\nu}} - S_{v_{\alpha}}{}^{A} \dot{R}^{xy}_{B} ({}^{B}\bm{\delta}) ^\wedge {}^{B}R^{xy}_{B[A]}S_{\omega}J_{B} \bm{\nu} \\
+& - S_{v_{\alpha}}{}^{A} R^{xy}_{B}({}^{B}\bm{\delta})^\wedge {}^{A}\dot{R}^{xy}_{B[A]} S_{\omega}{}^{B} J_{B} \bm{\nu} - S_{v_{\alpha}}{}^{A} R^{xy}_{B}({}^{B}\bm{\delta})^\wedge {}^{B}R^{xy}_{B[A]} S_{\omega}J_{B} \dot{\bm{\nu}}
+\end{aligned}
+\label{eq:control point acceleration affine}
+\end{equation*}
+
+where: ${}^{A} \dot{R}^{xy}_{B} = {}^{A}R^{xy}_{B} {}^{B}\bm{\omega}^{\wedge{}}_{A,B}$ is the previously obtained term.
+    
+\section{Rolling equation}
+\label{sec:Rolling equation}
+
+In this section are reported some additional passages to express the rolling acceleration constraint in the form that the TSID needs:
+
+The target is to arrive at a formulation in which the velocities and their derivatives are expressed as functions of $\bm{\nu}$ and $\dot{\bm{\nu}}$ such as the following.
+
+\begin{equation}
+{}^{L[A]}  \mathbf{v}_{A,L} = {}^{L[A]} J_{A,L/B[A]} \bm{\nu}^{B[A]/B}
+\label{eq: wheel center velocity}
+\end{equation}
+
+where 
+
+\begin{equation*}
+    J_{L} =  {}^{L[A]} J_{A,L/B[A]}
+\end{equation*}
+
+Let us now define a selection matrix $S_{v}$ as
+
+\begin{equation*}
+ S_{v} = \begin{bmatrix}
+ 1 & 0 & 0 & 0 & 0 & 0 \\
+ 0 & 1 & 0 & 0 & 0 & 0 \\
+ 0 & 0 & 1 & 0 & 0 & 0 \\
+\end{bmatrix}
+\end{equation*}
+
+What can be written is
+
+$$  \begin{cases}
+{}^{A} \dot{\mathbf{P}}_{L} = S_{v} J_{L}\bm{\nu} \\
+{}^{A} \ddot{\mathbf{P}}_{L} = S_v J_{L}\dot{\bm{\nu}} + S_{v} \dot{J}_{L}\bm{\nu} \\
+{}^{A} \bm{\omega}_{A,L} = S_{\omega} J_{L}\bm{\nu} \\
+{}^{A} \dot{\bm{\omega}}_{A,L} = S_{\omega} J_L\dot{\bm{\nu}} + S_{\omega}  \dot{J}_{L} \bm{\nu} \\
+\end{cases}$$
+
+In this way, rearranging terms:
+
+$$
+S_{v} J_{L}\dot{\bm{\nu}} +  S_{v} \dot{J}_{L}\bm{\nu} = -r\mathbf{e_{3}}^{\wedge{}}[S_{\omega} J_{L}\dot{\bm{\nu}} + S_{\omega}  \dot{J}_{L} \bm{\nu}]$$ 
+
+And so the final formulation that our controller requires is:
+
+\begin{equation*}
+ (S_{v} J_{L} + r\mathbf{e_{3}}^{\wedge{}} S_{\omega} J_{L}) \dot{\bm{\nu}} + (r\mathbf{e_{3}}^{\wedge{}} S_{\omega} + S_{v}) \dot{J}_{L} \bm{\nu} = 0
+\end{equation*}
+
+\section{Converting Least-Squares to Quadratic Programming}
+\label{sec:Converting Least-Squares to Quadratic Programming}
+
+Starting from the LSP formulation in \eqref{eq: LSP Formulation}
+
+\begin{center}
+$\underset{\bm{\dot{\nu},{}_{B}\mathbf{f},\bm{\tau}}}{\text{argmin}} (W_{\alpha}\|J_{T_{\alpha}}{\dot{\bm{\nu}}} - \dot{J}_{T_{\alpha}}\bm{\nu} - \ddot{\bm{\alpha}}_{xy}^{*}\|^{2} + w_{\tau}\| \tau_L \|^{2} + w_{\tau}\| \tau_R \|^{2} + w_{\xi} \| \xi \|^{2} + {}_{B}\mathbf{f}^{T} \lambda I {}_{B}\mathbf{f})$
+
+\text{subject to}
+
+\end{center}
+
+\begin{equation*}
+\begin{cases}
+        M(\mathbf{q})\dot{\bm{\nu}} + h(\mathbf{q},\bm{\nu}) = S\bm{\tau} + J^{T}_{C} {}_{B}\mathbf{f} \\
+        J_{R}\bm{\dot{\nu}} + \dot{J}_R\bm{\nu} = 0 \\
+        J_{T_P}{\dot{\bm{\nu}}} - \dot{J}_{T_P}\bm{\nu} - \ddot{\theta}^{*} + \xi = 0 \\
+        A_{f}{}_{B}\mathbf{f} < \mathbf{b}_{f} \\
+        lb_{\xi} \leq \xi \leq ub_{\xi}
+\end{cases}
+\end{equation*}
+
+we define the vector of optimization variables such as 
+
+\begin{equation}
+ \mathbf{v} = \begin{Bmatrix}
+     \dot{\bm{\nu}} \\
+     {}_{B}\mathbf{f} \\
+     \bm{\tau}  \\
+     \xi \\
+\end{Bmatrix} \in \mathbb{R}^{17}
+\end{equation}
+
+A weighting matrix W such as
+
+\begin{equation}
+W = \begin{bmatrix}
+w_{\alpha_x} & 0 & \cdots & 0 & 0 \\
+0 & w_{\alpha_y} & \cdots & 0 & 0 \\
+\vdots & \vdots & \ddots & \vdots & \vdots \\
+0 & 0 & \cdots &  \ddots & 0 \\
+0 & 0 & \cdots & 0 & w_{\xi}
+\end{bmatrix} \in \mathbb{R}^{5 \times 5}
+\end{equation}
+
+And a regulariztion matrix such as
+
+\begin{equation}
+\lambda I = \begin{bmatrix}
+0 & \cdots & \cdots & 0 & 0 \\
+0 & \ddots & \cdots & 0 & 0 \\
+\vdots & \vdots & \lambda I_{6 \times 6} & \vdots & \vdots \\
+0 & 0 & \cdots & \ddots & 0 \\
+0 & 0 & \cdots & 0 & 0 
+\end{bmatrix} \in \mathbb{R}^{17 \times 17}
+\end{equation}
+
+The LS cost function can be written in a matrix form as $(\| D\mathbf{v} - \mathbf{a} \|^{2} + \mathbf{v}^{T} \lambda I \mathbf{v})$  which can be expanded as
+
+\begin{equation*}
+    (D\mathbf{v} - \mathbf{a})^{T}(D\mathbf{v} - \mathbf{a}) + \mathbf{v}^{T} \lambda I \mathbf{v}=
+\end{equation*}
+
+\begin{equation*}
+   = (\mathbf{v}^{T} D^{T} D \mathbf{v} - 2\mathbf{a}^{T}D\mathbf{v} +\frac{1}{2} \mathbf{a}^{T}\mathbf{a} + \mathbf{v}^{T} \lambda I \mathbf{v}) =
+\end{equation*}
+
+\begin{equation*}
+   = (\frac{1}{2} \mathbf{v}^{T} D^{T} D \mathbf{v} - \mathbf{a}^{T}D\mathbf{v} + \mathbf{a}^{T}\mathbf{a} + \frac{1}{2} \mathbf{v}^{T} \lambda I \mathbf{v}) =
+\end{equation*}
+
+Now defining a new matrix
+\begin{equation*}
+  H = D^{T} D + \lambda I 
+\end{equation*}
+
+and a new vector 
+\begin{equation*}
+  \mathbf{c} = \mathbf{a}^{T}D
+\end{equation*}
+
+considering that the term $(\mathbf{a}^{T}\mathbf{a})$ does not depend on the optimization variables, and so does not influence the optimization problem, the LS cost function in \eqref{eq: LSP Formulation} can be written as the one in \eqref{eq: QP Formulation}
+
+\begin{center}
+$\underset{\bm{\dot{\nu},{}_{B}\mathbf{f},\bm{\tau}}, \bm{\xi}}{\text{argmin}} (\frac{1}{2} \mathbf{v}^{T} H \mathbf{v} + \mathbf{c}^{T} \mathbf{v})$
+\end{center}
+
+for what concerns the constraints in \eqref{eq: LSP Formulation}, they can be rewritten in a matrix form as 
+
+
+\begin{equation}
+\begin{Bmatrix} 
+-h(\mathbf{q},\bm{\nu})\\
+-\dot{J_{R}}\bm{\nu} \\
+\dot{J}_{T_P}\bm{\nu} + \ddot{\theta}^{*}\\
+-\bm{\infty} \\
+ub_{\xi} \\
+\end{Bmatrix} \leq \begin{bmatrix} 
+M(\mathbf{q}) & -J_c^{T} & -S & 0 \\
+J_{R} & 0 & 0  & 0\\
+J_{T_P} & 0 & 0  & 1\\
+0 & A_{f} & 0 & 0\\
+0 & 0 & 0 & 1 \\
+\end{bmatrix} \begin{Bmatrix} 
+\dot{\bm{\nu}} \\
+{}_{B}\mathbf{f} \\
+\bm{\tau}  \\
+\xi \\
+\end{Bmatrix} \leq \begin{Bmatrix} 
+-h(\mathbf{q},\bm{\nu})\\\
+-\dot{J_{R}}\bm{\nu}\\
+\dot{J}_{T_P}\bm{\nu} + \ddot{\theta}^{*} \\
+\mathbf{b}_{f} \\
+ub_{\xi} \\
+\end{Bmatrix}
+\end{equation}
+
+and then condensed in a more compact formulation
+
+\begin{equation*}
+    \mathbf{l}_b \leq A \mathbf{v} \leq \mathbf{u}_b
+\end{equation*}
+
+In this way we get to the final QP formulation given in Equation\eqref{eq: QP Formulation} 
+
+\vspace{12pt}
+\begin{center}
+{\large \textbf{QP Formulation}}
+\end{center}
+
+\begin{center}
+$\underset{\bm{\dot{\nu},{}_{B}\mathbf{f},\bm{\tau}}, \bm{\xi}}{\text{argmin}} (\frac{1}{2} \mathbf{v}^{T} H \mathbf{v} + \mathbf{c}^{T} \mathbf{v})$
+
+\text{subject to}
+
+\end{center}
+\begin{equation*}
+\mathbf{l}_b \leq A \mathbf{v} \leq \mathbf{u}_b
+\end{equation*}

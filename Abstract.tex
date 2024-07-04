@@ -1,0 +1,15 @@
+\chapter*{Abstract} 
+\label{ch:Abstract}
+
+% ABSTRACT IN ENGLISH
+
+Since their introduction, Segway-like vehicles have attracted significant interest from manufacturers and users, due to their simple mechanical structure, unique maneuverability, and ability to operate in different scenarios, with a wide range of possible applications. Despite the apparent simplicity of the model, studying the controllers to be applied to these vehicles is not straightforward given their particular nonlinear dynamics and inherent instability. 
+
+Over the years, various control strategies have been developed for these vehicles, ranging from more classical methodologies to the application of intelligent controllers, demonstrating good results in terms of performance. However, less emphasis has been placed on studying slip prevention between wheels and terrain and on utilizing these vehicles as platforms capable of autonomous navigation.
+
+The aim of this thesis is to address these two challenges, applied to an autonomous two-wheeled electric cargo (smart E-Cargo) with a Task Space Inverse Dynamics (TSID) controller.
+This controller, within an optimization problem, is capable of managing a series of kinematic and dynamic constraints to ensure pure rolling motion, while simultaneously guaranteeing self-balancing and tracking of a desired trajectory in space. Since TSID is mainly designed for humanoid robots modeled as floating-base systems, the same approach has been adopted for the smart E-Cargo.
+
+The proposed control strategy has been implemented using Matlab and Simulink, receiving in input a Unified Robot Description Format (URDF) model of the vehicle. Simulation results demonstrate the effectiveness of the TSID approach in maintaining stability and achieving precise control. Additionally, robustness analysis is conducted to evaluate the performance under various load conditions and uncertainties in the friction coefficient estimation.
+\\
+\textbf{Keywords:} Segway, control, TSID , friction, self-balancing, tracking % Keywords
